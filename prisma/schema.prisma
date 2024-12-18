@@ -1,0 +1,33 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  clerkId   String   @unique
+  email     String
+  fullname  String
+  metadata  Json
+  supis     Supi[]   @relation("UserSupis")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clerkId,id])
+}
+
+model Supi {
+  id           Int    @id @default(autoincrement())
+  assistantId  String
+  instruction  String
+  userId       Int
+  user         User   @relation("UserSupis", fields: [userId], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId,id])
+}
