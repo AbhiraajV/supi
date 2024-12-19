@@ -11,7 +11,7 @@ import useLocalStorageState from "./hooks/useLocalstorageState"
 import { Button } from "@/components/ui/button"
 import { SupiCard } from "./components/home/SupiCard"
 import { Plus } from "lucide-react"
-import { updateAssistant } from "./actions/assistant.action"
+import { deleteAssistant, updateAssistant } from "./actions/assistant.action"
 
 export default function Home() {
   const [user, setUser] = useState<User | 'anonymous' | undefined>()
@@ -45,8 +45,11 @@ export default function Home() {
     updateAssistant({name:updatedSupi.name,instructions:updatedSupi.instructions,assistantId:updatedSupi.id}).then(() => setSupis(prev => prev.map(s => s.id === updatedSupi.id ? { ...s, ...updatedSupi } : s)))
   }
 
-  const handleDeleteSupi = (supiId: string) => {
-    setSupis(prev => prev.filter(s => s.id !== supiId))
+  const handleDeleteSupi = (assistant:Assistant,supiId: number) => {
+    deleteAssistant(assistant,supiId).then(()=>{
+
+      setSupis(prev => prev.filter(s => s.id !== assistant.id))
+    })
   }
 
   return (
@@ -65,7 +68,7 @@ export default function Home() {
             supi={s}
             // vsId={s.tool_resources?.file_search}
             onUpdate={handleUpdateSupi}
-            onDelete={() => handleDeleteSupi(s.id!)}
+            onDelete={() => handleDeleteSupi(s as Assistant,s.supiId!)}
           />
         ))}
       </div>

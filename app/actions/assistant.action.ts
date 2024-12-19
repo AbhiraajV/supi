@@ -8,7 +8,7 @@ export const createAssistant = async ({name,instructions,vector_store_ids}:{name
     const assistant = await openai.beta.assistants.create({
         name,
         instructions,
-        model: "gpt-4o",
+        model: "gpt-4o-mini",
         tools: [{ type: "file_search" }],
         tool_resources:{
             file_search:{
@@ -32,15 +32,24 @@ export const updateAssistant = async ({name,instructions,assistantId}:{name:stri
 
 export const deleteAssistant = async (assistant:Assistant,supiId:number) => {
     const openai = await getOpenAIInstance();
-    const fileList = await openai.beta.vectorStores.files.list(assistant.tool_resources!.file_search!.vector_store_ids[0]!)
-    fileList.data.forEach(f=> openai.files.del(f.id));
+    const vsId = assistant.tool_resources.file_search!.vector_store_ids[0] ?? undefined;
+    if(vsId){
+
+        const fileList = await openai.beta.vectorStores.files.list(vsId)
+        console.log(fileList);
+        fileList.data.forEach(f=> openai.files.del(f.id));
+        console.log('deleted files')
+        openai.beta.vectorStores.del(vsId);
+        console.log('deleted vs')
+    }
     openai.beta.assistants.del(assistant.id);
-    openai.beta.assistants.del(assistant.id);
+    console.log('deleted assistant')
     prisma?.supi.delete({
         where:{
             id:supiId,
         }
     })
+    console.log('deleted supi')
     return true;
 }
 export const getAssistant = async (assistantId:string) => {

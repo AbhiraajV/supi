@@ -14,6 +14,7 @@ import { FileUploader } from './FileUploader'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import {debounce} from 'lodash'
+import { ChatInterface } from './Chat/ChatInterface'
 interface SupiCardProps {
   supi: Partial<Assistant> & { _request_id?: string | null | undefined } & { supiId: number | undefined }
   onUpdate: (updatedSupi: Partial<Assistant>) => void
@@ -128,9 +129,7 @@ export function SupiCard({ supi, onUpdate, onDelete }: SupiCardProps) {
             )}
         </TabsContent>
         <TabsContent value="chat" className="p-4">
-          <div className="text-center text-gray-500">
-            Chat interface coming soon...
-          </div>
+          <ChatInterface supi={supi}/>
         </TabsContent>
       </Tabs>
     </div>
