@@ -10,14 +10,14 @@ import { createASupi } from "./actions/consolidation.action"
 import useLocalStorageState from "./hooks/useLocalstorageState"
 import { Button } from "@/components/ui/button"
 import { SupiCard } from "./components/home/SupiCard"
-import { FilesAccordion } from "./components/home/FilesAccordion"
+import { Plus } from "lucide-react"
+import { updateAssistant } from "./actions/assistant.action"
 
 export default function Home() {
   const [user, setUser] = useState<User | 'anonymous' | undefined>()
   const [supis, setSupis] = useLocalStorageState<
     (Partial<Assistant> & { _request_id?: string | null | undefined } & { supiId: number | undefined })[]
   >('supis', [])
-  
 
   useEffect(() => {
     if (user && user !== 'anonymous') return
@@ -27,7 +27,7 @@ export default function Home() {
   }, [])
 
   useEffect(() => {
-    if (!user || user === 'anonymous') return
+    if (!user || user === 'anonymous' || supis.length > 0) return
     getSupis(user.id).then(s => setSupis(s))
   }, [user])
   
@@ -35,34 +35,40 @@ export default function Home() {
   if (user === 'anonymous') return <SignInButton />
   
   const handleCreateSupi = () => {
-    createASupi({ userId: user.id, instructions: '', name: "My first supi" }).then(s => {
+    createASupi({ userId: user.id, instructions: '', name: "" }).then(s => {
       setSupis(prev => ([...prev, s]))
     })
   }
 
   const handleUpdateSupi = (updatedSupi: Partial<Assistant>) => {
-    setSupis(prev => prev.map(s => s.id === updatedSupi.id ? { ...s, ...updatedSupi } : s))
+    if(!updatedSupi.name || !updatedSupi.instructions || !updatedSupi.id) return;
+    updateAssistant({name:updatedSupi.name,instructions:updatedSupi.instructions,assistantId:updatedSupi.id}).then(() => setSupis(prev => prev.map(s => s.id === updatedSupi.id ? { ...s, ...updatedSupi } : s)))
+  }
+
+  const handleDeleteSupi = (supiId: string) => {
+    setSupis(prev => prev.filter(s => s.id !== supiId))
   }
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-6">Supi Manager</h1>
-      <Button onClick={handleCreateSupi} className="mb-6">Create a Supi</Button>
-      <div className="space-y-6">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Supi Manager</h1>
+        <Button onClick={handleCreateSupi} className="bg-primary hover:bg-primary/90">
+          <Plus className="mr-2 h-4 w-4" />
+          Create Supi
+        </Button>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {supis.map(s => (
-          <div key={s.id}>
-            <SupiCard supi={s} onUpdate={handleUpdateSupi} />
-            {s?.tool_resources?.file_search?.vector_store_ids &&
-              s.tool_resources.file_search.vector_store_ids.length > 0 && (
-                <FilesAccordion
-                  vectorStoreId={s.tool_resources.file_search.vector_store_ids[0]}
-                  supiId={s.id!}
-                />
-              )}
-          </div>
+          <SupiCard
+            key={s.id}
+            supi={s}
+            // vsId={s.tool_resources?.file_search}
+            onUpdate={handleUpdateSupi}
+            onDelete={() => handleDeleteSupi(s.id!)}
+          />
         ))}
       </div>
     </div>
   )
 }
-

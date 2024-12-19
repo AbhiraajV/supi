@@ -12,11 +12,10 @@ export const createAVectorStore = async ({name}:{name:string}) => {
 }
 
 import path from "path";
-import { VectorStoreFileBatch } from "openai/resources/beta/vector-stores/file-batches.mjs";
 export const uploadToVectorStore = async (
   files: File[],
   vectorStoreId: string
-): Promise<VectorStoreFileBatch> => {
+): Promise<string> => {
   const openai = await getOpenAIInstance();
 
   const baseDir = `/public/${vectorStoreId}`;
@@ -32,9 +31,10 @@ export const uploadToVectorStore = async (
       return fs.createReadStream(tempPath);
     })
   );
-  return await openai.beta.vectorStores.fileBatches.uploadAndPoll(vectorStoreId, {
+  const uploaded = await openai.beta.vectorStores.fileBatches.uploadAndPoll(vectorStoreId, {
     files: fileStreams,
   });
+  return uploaded.status;
 };
 export const pollVS = async (vectorStoreId:string,batchId:string) => {
   const openai = await getOpenAIInstance();
@@ -48,5 +48,11 @@ export const retrieveVSFiles = async (vsId: string) => {
   const retrievedFiles = await Promise.all(
     files.data.map((f) => openai.files.retrieve(f.id))
   );
-  return retrievedFiles.map((file) => ({filename:file.filename,bytes:file.bytes}));
+  return retrievedFiles.map((file) => ({filename:file.filename,bytes:file.bytes,id:file.id}));
 };
+
+
+export const deleteFile = async (fileId:string) => {
+  const openai = await getOpenAIInstance();
+  openai.files.del(fileId)
+}
